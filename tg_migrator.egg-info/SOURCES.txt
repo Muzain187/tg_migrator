@@ -1,0 +1,11 @@
+License.txt
+setup.py
+tg_migrator/__init__.py
+tg_migrator/config.py
+tg_migrator/main.py
+tg_migrator.egg-info/PKG-INFO
+tg_migrator.egg-info/SOURCES.txt
+tg_migrator.egg-info/dependency_links.txt
+tg_migrator.egg-info/entry_points.txt
+tg_migrator.egg-info/requires.txt
+tg_migrator.egg-info/top_level.txt

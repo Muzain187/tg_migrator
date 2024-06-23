@@ -1,0 +1,2 @@
+[console_scripts]
+tg_migrator = tg_migrator.main:main

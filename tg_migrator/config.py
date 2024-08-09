@@ -32,9 +32,9 @@ class Config:
         secret = config['tg_migrator']['secret']
         tg_cloud = config['tg_migrator'].getboolean('tg_cloud')
         graph_name = config['tg_migrator']['graph_name']
-        token = config['tg_migrator']['token']
         
-        return host_name, secret, tg_cloud, graph_name, token
+        
+        return host_name, secret, tg_cloud, graph_name
     
 
 
@@ -87,11 +87,37 @@ def downgrade():
         print(f"Version file '{file_name}' created successfully ...")
         return file_name
 
+    def getUnusedFile(localfiles,versionfiles):
+        # localfiles = localfiles.sort()
+        # versionfiles = versionfiles.sort()
+        local_file_set = set(localfiles)
+        version_file_set = set(versionfiles)
+
+        final_file_set = local_file_set ^ version_file_set
+        print("final file set",final_file_set)
+        if local_file_set == version_file_set:
+            # print("local and verisons are the same")
+            return []
+        else:
+            print("either ")
+            final_file_list = list(final_file_set)
+            final_file_list.sort()
+            return final_file_list 
+            
+        
+        
+        
+
+
+
+
+    
+
 
 class tg_config:
 
     def tg_connect():
-        host_name, secret, tg_cloud, graph_name, token = Config.read_config('tg_migrator.ini')
+        host_name, secret, tg_cloud, graph_name = Config.read_config('tg_migrator.ini')
         print("connecting to Tigergraph server..")
         conn = tg.TigerGraphConnection(host=host_name,graphname=graph_name, gsqlSecret=secret,tgCloud=tg_cloud)
         print("Generating auth token..")
@@ -105,11 +131,13 @@ class tg_config:
 
 
     def tg_checkVertex(conn):
+        print("checking for 'tg_migrator vertex'")
         result = conn.getVertexType("tg_migrator")
+        print(result)
         return len(result) > 0
     
     def tg_create_migrator_vertex(conn):
-        host_name, secret, tg_cloud, graph_name, token = Config.read_config('tg_migrator.ini')
+        host_name, secret, tg_cloud, graph_name = Config.read_config('tg_migrator.ini')
        
         response = conn.gsql(
             f"USE GRAPH {graph_name}"+
@@ -132,8 +160,43 @@ class tg_config:
 
         return response
 
+    def tg_getversions(conn):
+        """ 
+        Use to list the all the versions that are there in the tg_migrator
+        """
+        host_name, secret, tg_cloud, graph_name = Config.read_config('tg_migrator.ini')
+        print("getting into tg_getversions")
+        result = conn.gsql(
+            f"USE GRAPH {graph_name}"+
+            """ 
+            INTERPRET QUERY(){
+            ListAccum<string> @@file_id;
+            src = select s from tg_migrator:s where s.id == "root";
+            while src.size() > 0 
+            DO
+                    src = 
+                    select t 
+                from src:s - (next_version>:e) - tg_migrator:t
+                    ACCUM @@file_id += t.id
+                    ;
+            END;
+            PRINT @@file_id as file_id;
+            }
+            """
+
+        )
+        print("tg_getversions ",result)
+        json_part = result.split(f"Using graph '{graph_name}'")[-1].strip()
+
+        # Parse the JSON string into a dictionary
+        data = json.loads(json_part)
+        file_ids = data["results"][0]["file_id"]
+        print(file_ids)
+        return file_ids
+        
+
     def tg_add_migration(conn,file_name):
-        host_name, secret, tg_cloud, graph_name, token = Config.read_config('tg_migrator.ini')
+        host_name, secret, tg_cloud, graph_name = Config.read_config('tg_migrator.ini')
         result = conn.gsql(
             f"USE GRAPH {graph_name}"+
             f"""
@@ -175,6 +238,7 @@ class tg_config:
             }}
             """
         )
+        print("done with ",file_name)
 
 
 
@@ -186,7 +250,7 @@ class tg_config:
         return module
 
     def tg_upgrade(conn,version):
-        host_name, secret, tg_cloud, graph_name, token = Config.read_config('tg_migrator.ini')
+        host_name, secret, tg_cloud, graph_name = Config.read_config('tg_migrator.ini')
         result = conn.gsql(
             f"USE GRAPH {graph_name}"+
             """
@@ -246,7 +310,7 @@ class tg_config:
 
 
     def tg_downgrade(conn,version):
-        host_name, secret, tg_cloud, graph_name, token = Config.read_config('tg_migrator.ini')
+        host_name, secret, tg_cloud, graph_name = Config.read_config('tg_migrator.ini')
         result = conn.gsql(
             f"USE GRAPH {graph_name}"+
             """

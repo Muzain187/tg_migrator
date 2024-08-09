@@ -1,6 +1,7 @@
 # main.py
 
 from config import Config, tg_config
+import os
 import sys
 
 def main():
@@ -38,6 +39,28 @@ def main():
             version = sys.argv[2]
             if version == "all":
                 conn = tg_config.tg_connect()
+                if not tg_config.tg_checkVertex(conn): #check whether tg_migrator vertex is present or not
+                    print("creating tg_migrator ...")
+                    print(tg_config.tg_create_migrator_vertex(conn))
+
+                
+                file_ids = tg_config.tg_getversions(conn) 
+                
+                local_files = os.listdir("versions")
+                local_files = [os.path.join("versions", file) for file in local_files]
+                local_files = [f for f in local_files if f not in ['versions/__pycache__', 'versions/__init__.py']]
+                
+                
+                local_files.sort()
+                file_ids.sort()
+                unusedfiles = Config.getUnusedFile(local_files, file_ids)
+                if len(unusedfiles) > 0:
+                    for filename in unusedfiles:
+                        print(f"Adding {filename} to the tg_migrator")
+                        tg_config.tg_add_migration(conn,filename)
+                else:
+                    print(unusedfiles)
+                        
                 tg_config.tg_upgrade(conn, version)
 
         elif command == "downgrade" and len(sys.argv) > 2:

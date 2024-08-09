@@ -1,8 +1,7 @@
 Metadata-Version: 2.1
 Name: tg-migrator
-Version: 0.1.2
+Version: 0.1.4
 Summary: migration tool for tigergraph
 Author: Mohammad Ashraf
-License-File: License.txt
 Requires-Dist: configparser
 Requires-Dist: pyTigerGraph

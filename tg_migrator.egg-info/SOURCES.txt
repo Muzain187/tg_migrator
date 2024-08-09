@@ -9,3 +9,11 @@ tg_migrator.egg-info/dependency_links.txt
 tg_migrator.egg-info/entry_points.txt
 tg_migrator.egg-info/requires.txt
 tg_migrator.egg-info/top_level.txt
+tg_migrator/versions/20240703224042_creating_Person_vertex.py
+tg_migrator/versions/20240703224217_creating_freind_edge.py
+tg_migrator/versions/20240703224218_creating_location.py
+tg_migrator/versions/20240703224219_creating_located.py
+tg_migrator/versions/20240707080142_liked_vertex.py
+tg_migrator/versions/20240707080757_liked_edge_between_Person_and_Post.py
+tg_migrator/versions/20240809201406_Hashtag_vertex_and_Edge.py
+tg_migrator/versions/__init__.py

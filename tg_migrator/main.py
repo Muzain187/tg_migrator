@@ -3,6 +3,7 @@
 from config import Config, tg_config
 import os
 import sys
+from tqdm import tqdm  # Import tqdm
 
 def main():
     print("""
@@ -16,7 +17,6 @@ def main():
             |______|  
                                                             
     By: Mohammad Ashraf
-    Version: 0.1.2
 
     """)
     if len(sys.argv) > 1:
@@ -55,7 +55,7 @@ def main():
                 file_ids.sort()
                 unusedfiles = Config.getUnusedFile(local_files, file_ids)
                 if len(unusedfiles) > 0:
-                    for filename in unusedfiles:
+                    for filename in tqdm(unusedfiles, desc="Adding files to tg_migrator"):
                         print(f"Adding {filename} to the tg_migrator")
                         tg_config.tg_add_migration(conn,filename)
                 else:

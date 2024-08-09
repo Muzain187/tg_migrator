@@ -6,6 +6,8 @@ import pyTigerGraph as tg
 import json
 import importlib.util
 
+from tqdm import tqdm 
+
 
 
 class Config:
@@ -94,12 +96,12 @@ def downgrade():
         version_file_set = set(versionfiles)
 
         final_file_set = local_file_set ^ version_file_set
-        print("final file set",final_file_set)
+        # print("final file set",final_file_set)
         if local_file_set == version_file_set:
             # print("local and verisons are the same")
             return []
         else:
-            print("either ")
+            # print("either ")
             final_file_list = list(final_file_set)
             final_file_list.sort()
             return final_file_list 
@@ -133,10 +135,13 @@ class tg_config:
     def tg_checkVertex(conn):
         print("checking for 'tg_migrator vertex'")
         result = conn.getVertexType("tg_migrator")
-        print(result)
+        # print(result)
         return len(result) > 0
     
     def tg_create_migrator_vertex(conn):
+        """
+        This function is used to create the `tg-migrator` node if not existed.
+        """
         host_name, secret, tg_cloud, graph_name = Config.read_config('tg_migrator.ini')
        
         response = conn.gsql(
@@ -165,7 +170,7 @@ class tg_config:
         Use to list the all the versions that are there in the tg_migrator
         """
         host_name, secret, tg_cloud, graph_name = Config.read_config('tg_migrator.ini')
-        print("getting into tg_getversions")
+        # print("getting into tg_getversions")
         result = conn.gsql(
             f"USE GRAPH {graph_name}"+
             """ 
@@ -185,17 +190,20 @@ class tg_config:
             """
 
         )
-        print("tg_getversions ",result)
+        # print("tg_getversions ",result)
         json_part = result.split(f"Using graph '{graph_name}'")[-1].strip()
 
         # Parse the JSON string into a dictionary
         data = json.loads(json_part)
         file_ids = data["results"][0]["file_id"]
-        print(file_ids)
+        # print(file_ids)
         return file_ids
         
 
     def tg_add_migration(conn,file_name):
+        """
+        This function is used to add the version to the `tg_migrator` node
+        """
         host_name, secret, tg_cloud, graph_name = Config.read_config('tg_migrator.ini')
         result = conn.gsql(
             f"USE GRAPH {graph_name}"+
@@ -238,7 +246,7 @@ class tg_config:
             }}
             """
         )
-        print("done with ",file_name)
+        # print("done with ",file_name)
 
 
 
@@ -250,6 +258,9 @@ class tg_config:
         return module
 
     def tg_upgrade(conn,version):
+        """
+        This function is used to upgrade all the version
+        """
         host_name, secret, tg_cloud, graph_name = Config.read_config('tg_migrator.ini')
         result = conn.gsql(
             f"USE GRAPH {graph_name}"+
@@ -286,7 +297,7 @@ class tg_config:
 
         else:
             
-            for filename in files:
+            for filename in tqdm(files):
                 module = tg_config.load_module_from_file(filename)
                 print(f"Upgrade functions in {filename}")
                 
@@ -310,6 +321,13 @@ class tg_config:
 
 
     def tg_downgrade(conn,version):
+        """
+        This function is used to downgrade the schema to the given version.
+        working:
+        finding the leaf node from the graph.
+        backtrack from leaf node to targeted node (targeted version)
+        store it in a list and return.
+        """
         host_name, secret, tg_cloud, graph_name = Config.read_config('tg_migrator.ini')
         result = conn.gsql(
             f"USE GRAPH {graph_name}"+
@@ -334,7 +352,7 @@ class tg_config:
         v_id = data["results"][0]["leaf_node"][0]["v_id"]
 
         # Print the extracted v_id
-        print(v_id)
+        # print(v_id)
         result = conn.gsql(
                 f"""
                 USE GRAPH {graph_name}
@@ -361,7 +379,7 @@ class tg_config:
 
         """)
         # Extract the JSON part from the string
-        json_part = result.split('Using graph \'temporary\'')[-1].strip()
+        json_part = result.split(f"Using graph \'{graph_name}\'")[-1].strip()
 
         # Parse the JSON string into a dictionary
         data = json.loads(json_part)
@@ -373,16 +391,16 @@ class tg_config:
         print(files)
 
         if len(files) < 1:
-            print("All the version are up to date..")
+            print("No files to downgrade...")
 
         else:
             
-            for filename in files:
+            for filename in tqdm(files):
                 module = tg_config.load_module_from_file(filename)
                 print(f"Executing functions in {filename}")
                 
                 if hasattr(module, 'downgrade'):
-                    print("Executing downgrade function:")
+                    # print("Executing downgrade function:")
                     downgrade_command = module.downgrade()
                     print(downgrade_command)
                     result = conn.gsql(
